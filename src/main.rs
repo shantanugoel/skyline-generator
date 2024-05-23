@@ -23,5 +23,6 @@ fn main() {
     let contributions = github_handle
         .get_contributions(&args.user, args.year)
         .unwrap();
-    println!("{:?}", contributions.len());
+    // println!("{:?}", contributions.len());
+    stl::create_3d_model(contributions).unwrap();
 }
