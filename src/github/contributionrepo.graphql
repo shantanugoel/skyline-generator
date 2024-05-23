@@ -1,0 +1,33 @@
+query ContributionByRepoQuery(
+  $username: String!
+  $owner: String
+  $repo_name: String
+  $start_date: GitTimestamp!
+) {
+  repository(owner: $owner, name: $repo_name) @include(if: $repo_name) {
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history(author: { name: $username }, since: $start_date) {
+            nodes {
+              committedDate
+            }
+          }
+        }
+      }
+    }
+  }
+
+  user(login: $username) @skip(if: $repo_name) {
+    contributionsCollection(from: $start_date) {
+      contributionCalendar {
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+query IdQuery(
+  $username: String!,
+) {
+  user(login: $username) {
+    id
+  }
+}

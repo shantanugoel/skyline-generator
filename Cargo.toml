@@ -1,0 +1,13 @@
+[package]
+name = "skyline-generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+base64 = "0.22.1"
+chrono = { version = "0.4.38", features = ["serde"] }
+clap = { version = "4.5", features = ["derive"] }
+graphql_client = { version = "0.14", features = ["reqwest-blocking"] }
+reqwest = { version = "^0.11", features = ["blocking", "json"] }
+serde = { version = "1.0", features = ["derive"] }

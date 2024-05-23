@@ -1,0 +1,19 @@
+query ContributionQuery(
+  $username: String!,
+  $start_date: DateTime!,
+  $end_date: DateTime!
+) {
+  user(login: $username) {
+    contributionsCollection(from: $start_date, to:$end_date) {
+      contributionCalendar {
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+            color
+          }
+        }
+      }
+    }
+  }
+}
