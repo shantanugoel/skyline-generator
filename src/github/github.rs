@@ -1,1 +1,0 @@
-fn fetch_contributions() {}
