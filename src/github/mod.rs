@@ -9,7 +9,8 @@ use std::str::FromStr;
 static URL: &str = "https://api.github.com/graphql";
 
 type Date = String;
-pub type DateTime = chrono::DateTime<chrono::Utc>;
+type DateTime = chrono::DateTime<chrono::Utc>;
+type GitTimestamp = DateTime;
 
 #[derive(GraphQLQuery)]
 #[graphql(
@@ -26,6 +27,14 @@ struct ContributionQuery;
     response_derives = "Debug"
 )]
 struct IdQuery;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "src/github/github_schema.graphql",
+    query_path = "src/github/contributionrepo.graphql",
+    response_derives = "Debug"
+)]
+struct ContributionByRepoQuery;
 
 pub struct GithubContributions {
     client: Client,
@@ -112,7 +121,24 @@ impl GithubContributions {
     }
 
     fn year_to_git_timestamp(year: u32) -> Result<(String, String)> {
-        if year < 2008 || year >= chrono::Utc::now().year() as u32 {
+        if year == 0 {
+            let end_date = chrono::Utc::now();
+            let start_date = end_date - chrono::Duration::days(365);
+            Ok((
+                format!(
+                    "{}-{}-{}T00:00:00Z",
+                    start_date.year(),
+                    start_date.month(),
+                    start_date.day()
+                ),
+                format!(
+                    "{}-{}-{}T00:00:00Z",
+                    end_date.year(),
+                    end_date.month(),
+                    end_date.day()
+                ),
+            ))
+        } else if year < 2008 || year >= chrono::Utc::now().year() as u32 {
             bail!("Invalid Year")
         } else {
             Ok((
@@ -120,5 +146,46 @@ impl GithubContributions {
                 format!("{year}-12-31T11:59:59Z"),
             ))
         }
+    }
+
+    // year being 0 should mean last 1 year ending today
+    pub fn get_contributions_by_repo(
+        self,
+        user: &str,
+        owner: &str,
+        repo: &str,
+        year: u32,
+    ) -> Result<Vec<Contribution>> {
+        let mut contributions: Vec<Contribution> = vec![];
+        let (start, end) = GithubContributions::year_to_git_timestamp(year).unwrap();
+        let variables = contribution_by_repo_query::Variables {
+            username: user.to_string(),
+            owner: owner.to_string(),
+            repo_name: repo.to_string(),
+            start_date: DateTime::from_str(&start).unwrap(),
+            end_date: DateTime::from_str(&end).unwrap(),
+        };
+        let response_body =
+            post_graphql::<ContributionByRepoQuery, _>(&self.client, URL, variables).unwrap();
+            println!("{:?}", response_body);
+            println!("{user}");
+
+        let target = response_body
+            .data
+            .unwrap()
+            .repository
+            .unwrap()
+            .default_branch_ref
+            .unwrap()
+            .target
+            .unwrap();
+        let mut commit: Option<contribution_by_repo_query::ContributionByRepoQueryRepositoryDefaultBranchRefTargetOnCommit> = 
+        match target {
+            contribution_by_repo_query::ContributionByRepoQueryRepositoryDefaultBranchRefTarget::Commit(c) => {Some(c)},
+            _ => {None}
+        };
+        let commit_count_by_day = commit.unwrap().history.total_count;
+        println!("{commit_count_by_day}");
+        Ok(contributions)
     }
 }

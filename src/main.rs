@@ -20,9 +20,10 @@ fn main() {
     let github_handle = github::GithubContributions::init();
 
     // github_handle.print_user_id(&args.user);
-    let contributions = github_handle
-        .get_contributions(&args.user, args.year)
-        .unwrap();
+    // let contributions = github_handle
+    //     .get_contributions(&args.user, args.year)
+    //     .unwrap();
     // println!("{:?}", contributions.len());
-    stl::create_3d_model(contributions).unwrap();
+    // stl::create_3d_model(contributions).unwrap();
+    github_handle.get_contributions_by_repo(&args.user, "qdrant", "fastembed", args.year);
 }
