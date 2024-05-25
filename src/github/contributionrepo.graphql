@@ -6,12 +6,20 @@ query ContributionByRepoQuery(
   $end_date: GitTimestamp!
 ) {
   repository(owner: $owner, name: $repo_name) {
-    defaultBranchRef {
-      target {
-      __typename
-        ... on Commit {
-          history(author: { emails: [$username] }, since: $start_date, until: $end_date) {
-            totalCount
+    refs(refPrefix:"refs/heads/", first: 100) {
+      nodes {
+        name
+        target {
+        __typename
+          ... on Commit {
+            history(first: 100 author: { emails: [$username] }, since: $start_date, until: $end_date) {
+              totalCount
+              edges {
+                node {
+                  committedDate
+                }
+              }
+            }
           }
         }
       }

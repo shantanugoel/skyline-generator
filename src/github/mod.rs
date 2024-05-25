@@ -158,34 +158,67 @@ impl GithubContributions {
     ) -> Result<Vec<Contribution>> {
         let mut contributions: Vec<Contribution> = vec![];
         let (start, end) = GithubContributions::year_to_git_timestamp(year).unwrap();
+        let start_date = DateTime::from_str(&start).unwrap();
+        let end_date = DateTime::from_str(&end).unwrap();
         let variables = contribution_by_repo_query::Variables {
             username: user.to_string(),
             owner: owner.to_string(),
             repo_name: repo.to_string(),
-            start_date: DateTime::from_str(&start).unwrap(),
-            end_date: DateTime::from_str(&end).unwrap(),
+            start_date,
+            end_date,
         };
         let response_body =
             post_graphql::<ContributionByRepoQuery, _>(&self.client, URL, variables).unwrap();
-            println!("{:?}", response_body);
-            println!("{user}");
 
-        let target = response_body
+        if let Some(errors) = response_body.errors {
+            for error in errors {
+                eprintln!("Error: {}", error.message);
+            }
+            bail!("Graphql query returned errors");
+        }
+
+        let nodes = response_body
             .data
             .unwrap()
             .repository
             .unwrap()
-            .default_branch_ref
+            .refs
             .unwrap()
-            .target
+            .nodes
             .unwrap();
-        let mut commit: Option<contribution_by_repo_query::ContributionByRepoQueryRepositoryDefaultBranchRefTargetOnCommit> = 
-        match target {
-            contribution_by_repo_query::ContributionByRepoQueryRepositoryDefaultBranchRefTarget::Commit(c) => {Some(c)},
-            _ => {None}
-        };
-        let commit_count_by_day = commit.unwrap().history.total_count;
-        println!("{commit_count_by_day}");
+
+        let num_days = (end_date - start_date).num_days() as usize + 1;
+        let mut commit_counts: Vec<u32> = vec![0; num_days];
+        for node in nodes {
+            let unwrapped_node = node.unwrap();
+            let commit : Option<contribution_by_repo_query::ContributionByRepoQueryRepositoryRefsNodesTargetOnCommit>
+             = match unwrapped_node.target.unwrap() {
+                contribution_by_repo_query::ContributionByRepoQueryRepositoryRefsNodesTarget::Commit(c) => {
+                    Some(c)
+                },
+                _ => {None}
+            };
+            if commit.is_some() {
+                let history = commit.unwrap().history;
+                for edge in history.edges.unwrap() {
+                    let commit_date = edge.unwrap().node.unwrap().committed_date;
+                    let index = num_days - (commit_date - start_date).num_days() as usize;
+                    commit_counts[index] += 1;
+                }
+            }
+        }
+        let mut total_commits = 0;
+        for (index, count) in commit_counts.iter().enumerate() {
+            let week = index as u32 / 7;
+            let day = index as u32 % 7;
+            contributions.push(Contribution {
+                week,
+                day,
+                count: *count as i64,
+                data: "".to_string(),
+            });
+            total_commits += count;
+        }
         Ok(contributions)
     }
 }

@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Contribution {
     pub week: u32,
     pub day: u32,
