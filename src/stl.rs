@@ -24,7 +24,7 @@ pub fn create_3d_model(contributions: Vec<Contribution>) -> Result<()> {
 
         // Base vertices
         let base_x = 5. + week * cell_width;
-        let base_y = 7.5 + day * cell_depth;
+        let base_y = 2.5 + (6.0 - day) * cell_depth;
         let base_z = 0.0;
 
         let v0 = Vector::new([base_x, base_y, base_z]);
