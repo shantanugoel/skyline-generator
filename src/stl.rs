@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Result;
 use stl_io::{Normal, Triangle, Vector};
 
-pub fn create_3d_model(contributions: Vec<Contribution>) -> Result<()> {
+pub fn create_3d_model(user: &str, year: u32, contributions: Vec<Contribution>) -> Result<()> {
     let mut triangles = Vec::new();
 
     // Dimensions
@@ -308,7 +308,7 @@ pub fn create_3d_model(contributions: Vec<Contribution>) -> Result<()> {
     triangles.extend(trapezoid_triangles);
 
     // Write to an STL file
-    let mut file = File::create("contributions.stl")?;
+    let mut file = File::create(format!("{user}_{year}.stl"))?;
     stl_io::write_stl(&mut file, triangles.iter().cloned())?;
 
     Ok(())

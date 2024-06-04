@@ -46,5 +46,5 @@ fn main() {
             )
             .unwrap()
     };
-    stl::create_3d_model(contributions).unwrap();
+    stl::create_3d_model(&args.user, args.year, contributions).unwrap();
 }
