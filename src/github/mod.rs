@@ -1,9 +1,9 @@
 use crate::model::Contribution;
-use ::reqwest::blocking::Client;
 use anyhow::{bail, Context, Result};
 use base64::prelude::*;
 use chrono::Datelike;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
+use reqwest::blocking::Client;
 use std::str::FromStr;
 
 static URL: &str = "https://api.github.com/graphql";
